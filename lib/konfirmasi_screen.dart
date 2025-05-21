@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:my_flutter_app/services/event_services.dart';
 
 class KonfirmasiScreen extends StatefulWidget {
-  const KonfirmasiScreen({super.key});
+  final int eventId; // Tambahkan parameter eventId
+
+  const KonfirmasiScreen({super.key, required this.eventId});
 
   @override
   State<KonfirmasiScreen> createState() => _KonfirmasiScreenState();
 }
 
 class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
+  final EventServices _eventServices =
+      EventServices(); // Ganti dengan base URL Anda
   bool _bersediaHadir = false;
   bool _sehatFisikMental = false;
   bool _siapBriefing = false;
@@ -20,6 +25,33 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
         _sehatFisikMental &&
         _siapBriefing &&
         _patuhiAturanPanduan;
+  }
+
+  late Future<Map<String, dynamic>> _eventDetails;
+  final String baseUrl = 'http://localhost:8080/api/file/';
+
+  @override
+  void initState() {
+    super.initState();
+    _eventDetails = fetchEventDetails(); // Panggil fungsi untuk mengambil data
+  }
+
+  Future<Map<String, dynamic>> fetchEventDetails() async {
+    final eventServices = EventServices(); // Instansiasi EventServices
+    return await eventServices.fetchEventById(widget.eventId);
+  }
+
+  String getImagePath(String imageUrl) {
+    return imageUrl.isNotEmpty
+        ? imageUrl.split('/').last // Ekstrak bagian terakhir dari URL
+        : '';
+  }
+
+  String getFullImageUrl(String imageUrl) {
+    final imagePath = getImagePath(imageUrl);
+    return imagePath.isNotEmpty
+        ? '$baseUrl$imagePath' // Gabungkan base URL dengan path
+        : ''; // Fallback jika URL kosong
   }
 
   @override
@@ -55,11 +87,41 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
-            'assets/card_pendampinglansia.jpg',
-            width: double.infinity,
-            height: 220,
-            fit: BoxFit.cover,
+          FutureBuilder<Map<String, dynamic>>(
+            future: _eventDetails,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 220,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (snapshot.hasError) {
+                return const SizedBox(
+                  height: 220,
+                  child: Center(child: Text('Gagal memuat gambar')),
+                );
+              } else if (snapshot.hasData) {
+                final imageUrl = snapshot.data?['image_url'] ?? '';
+                final fullImageUrl = getFullImageUrl(imageUrl);
+                return Image.network(
+                  fullImageUrl,
+                  width: double.infinity,
+                  height: 220,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(child: Text('Gambar tidak tersedia')),
+                    );
+                  },
+                );
+              } else {
+                return const SizedBox(
+                  height: 220,
+                  child: Center(child: Text('Tidak ada data')),
+                );
+              }
+            },
           ),
           const SizedBox(height: 16.0),
           Padding(
@@ -124,11 +186,21 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isFormValid()
-                        ? () {
-                            setState(() {
-                              _pendaftaranBerhasil =
-                                  true; // Set state untuk menampilkan view sukses
-                            });
+                        ? () async {
+                            try {
+                              // Panggil fungsi createVolunteer
+                              await _eventServices.createVolunteer(widget.eventId);
+
+                              // Pastikan widget masih mounted sebelum melakukan operasi terkait UI
+                              if (!mounted) return;
+
+                              // Jika berhasil, set state untuk menampilkan view sukses
+                              setState(() {
+                                _pendaftaranBerhasil = true;
+                              });
+                            } catch (e) {
+                              // Pastikan widget masih mounted sebelum menampilkan pesan error
+                            }
                           }
                         : null,
                     style: ElevatedButton.styleFrom(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_flutter_app/detailkampanye_screen.dart';
+import 'package:my_flutter_app/jadwal_screen.dart';
 import 'package:my_flutter_app/services/auth_services.dart';
+import 'package:my_flutter_app/services/event_services.dart';
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,6 +15,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentBannerIndex = 0;
   final AuthService authService = AuthService();
+  final EventServices eventServices = EventServices();
   String userName = '';
   String profilePicture = '';
   String baseUrl = 'http://localhost:8080/api/file/';
@@ -20,10 +24,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<String> skills = [];
   int volunteerCount = 0;
 
+  List<dynamic> events = [];
+  List<dynamic> eventSkills = [];
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _loadEvents();
+    _loadEventsSkill();
   }
 
   Future<void> _loadUserProfile() async {
@@ -70,6 +80,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         : ''; // Fallback to an empty string if no profile picture
   }
 
+  // Dynamically compute the image path
+  String getImagePath(String imageUrl) {
+    return imageUrl.isNotEmpty
+        ? imageUrl.split('/').last // Extract the last part of the path
+        : '';
+  }
+
+// Dynamically compute the full image URL
+  String getFullImageUrl(String imageUrl) {
+    final imagePath = getImagePath(imageUrl);
+    return imagePath.isNotEmpty
+        ? '$baseUrl$imagePath' // Combine base URL with the path
+        : ''; // Fallback to an empty string if no image URL
+  }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -84,6 +109,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      final fetchedEvents = await eventServices.fetchEvents();
+      setState(() {
+        events = fetchedEvents.map((event) {
+          final rawDate = event['start_date'];
+          final formattedDate =
+              DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
+          return {
+            'id': event['id'], // Ambil ID dari API
+            'image': getFullImageUrl(event['image_url']), // Gunakan getter
+            'title': event['title'], // Judul dari API
+            'location': event['location'], // Lokasi dari API
+            'start_date': formattedDate, // Tanggal mulai
+          };
+        }).toList();
+        isLoading = false; // Selesai memuat
+      });
+    } catch (e) {
+      _showErrorDialog('Gagal memuat event. Silakan coba lagi nanti.');
+      setState(() {
+        isLoading = false; // Selesai memuat meskipun gagal
+      });
+    }
+  }
+
+  Future<void> _loadEventsSkill() async {
+    try {
+      final fetchedEventsSkill = await eventServices.fetchEventsSkill();
+      setState(() {
+        eventSkills = fetchedEventsSkill.map((eventSkills) {
+          final skills = (eventSkills['skills'] as List)
+              .map((skill) => skill['Skill']['name'] as String)
+              .toList();
+
+          final rawDate = eventSkills['start_date'];
+          final formattedDate =
+              DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
+          return {
+            'id': eventSkills['id'], // Ambil ID dari API
+            'image':
+                getFullImageUrl(eventSkills['image_url']), // Gunakan getter
+            'title': eventSkills['title'], // Judul dari API
+            'location': eventSkills['location'],
+            'max_volunteers': eventSkills['max_volunteers'],
+            'volunteerCount': eventSkills['volunteerCount'],
+            'skills': skills, // Lokasi dari API
+            'start_date': formattedDate,
+            'raw_start_date': rawDate, // Tanggal mulai
+          };
+        }).toList();
+        isLoading = false; // Selesai memuat
+      });
+    } catch (e) {
+      _showErrorDialog('Gagal memuat event. Silakan coba lagi nanti.');
+      setState(() {
+        isLoading = false; // Selesai memuat meskipun gagal
+      });
+    }
   }
 
   @override
@@ -186,110 +272,134 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMainBanner() {
-    final List<Map<String, String>> banners = [
-      {
-        'image': 'assets/card_bersihsungai.png',
-        'title': 'Aksi Bersihkan Sungai',
-        'location': 'Sungai Ciliwung, 24 Mei 2025',
-      },
-      {
-        'image': 'assets/card_donordarah.png',
-        'title': 'Aksi Tanam Pohon',
-        'location': 'Desa Margamulyo, Kulon Progo',
-      },
-      {
-        'image': 'assets/card_mengajaranak.png',
-        'title': 'Pendamping Lansia',
-        'location': 'Surakarta, Jawa Tengah',
-      },
-    ];
+    if (events.isEmpty) {
+      // Tampilkan pesan jika tidak ada event
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 20),
+            Icon(
+              Icons.event_busy,
+              size: 100,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Tidak ada event tersedia saat ini',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
 
+    // Jika ada event, tampilkan banner
     return Column(
       children: [
         SizedBox(
           height: 250,
           child: PageView.builder(
             physics: const BouncingScrollPhysics(),
-            itemCount: banners.length,
+            itemCount: events.length,
             onPageChanged: (index) {
               setState(() {
-                _currentBannerIndex = index; // Use the class member variable
+                _currentBannerIndex = index; // Gunakan variabel anggota kelas
               });
             },
             itemBuilder: (context, index) {
-              final banner = banners[index];
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  alignment: Alignment.bottomLeft,
-                  children: [
-                    Image.asset(
-                      banner['image']!,
-                      fit: BoxFit.cover,
-                      height: 250,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(color: Colors.grey),
-                    ),
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withOpacity(0.3),
+              final banner = events[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => DetailkampanyeScreen(
+                        eventId: banner['id'], // Kirim id ke layar detail
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            banner['title']!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 25,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    alignment: Alignment.bottomLeft,
+                    children: [
+                      Image.network(
+                        banner['image']!,
+                        fit: BoxFit.cover,
+                        height: 250,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey,
+                          child: const Icon(Icons.broken_image,
+                              color: Colors.white),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black.withOpacity(0.3),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              banner['title']!,
+                              style: const TextStyle(
                                 color: Colors.white,
-                                size: 14,
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                banner['location']!,
-                                style: const TextStyle(
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
                                   color: Colors.white,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${banner['location']!}, ${banner['start_date']!}', // Gabungkan lokasi dan tanggal
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Lihat detail',
+                                style: TextStyle(
+                                  color: Colors.black,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              'Lihat detail',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -299,7 +409,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            banners.length,
+            events.length,
             (index) => Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
               width: 8,
@@ -308,7 +418,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 shape: BoxShape.circle,
                 color: _currentBannerIndex == index
                     ? Colors.blue
-                    : Colors.grey, // Use class member variable
+                    : Colors.grey, // Gunakan variabel anggota kelas
               ),
             ),
           ),
@@ -412,55 +522,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRekomendasiHorizontalList() {
+    if (isLoading) {
+      return const Center(
+        child:
+            CircularProgressIndicator(), // Tampilkan loading saat data dimuat
+      );
+    }
+
+    if (eventSkills.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 80),
+            Icon(
+              Icons.search_off, // Ikon diganti menjadi search_off
+              size: 100,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Tidak ada rekomendasi saat ini.',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return SizedBox(
       height: 350,
-      child: ListView(
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        children: [
-          _buildRekomendasiCard(
-            image: 'assets/card_pendampinglansia.jpg',
-            title: 'Pendamping Lansia Pasca Banjir',
-            location: 'Surakarta, Jawa Tengah',
-            tags: [
-              '#PendampingLansia',
-              '#DistribusiBantuan',
-              '#KesehatanDasar'
-            ],
-            progress: '12/20',
-            badgeText: '5 hari lagi',
+        itemCount: eventSkills.length,
+        itemBuilder: (context, index) {
+          final event = eventSkills[index];
+
+          // Hitung selisih hari menggunakan raw_start_date
+          final startDate = DateTime.parse(event['raw_start_date']);
+          final now = DateTime.now()
+              .toUtc()
+              .add(const Duration(hours: 7)); // Konversi ke WIB
+          final difference = startDate.difference(now).inDays;
+
+          // Tentukan teks badge
+          final badgeText = '$difference hari lagi';
+
+          return _buildRekomendasiCard(
+            image: event['image'],
+            title: event['title'],
+            location: event['location'],
+            tags: event['skills'],
+            progress: '${event['volunteerCount']}/${event['max_volunteers']}',
+            badgeText: badgeText, // Gunakan teks badge yang dihitung
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) =>
-                      const DetailkampanyeScreen(), // Tambahkan const jika memungkinkan
+                  builder: (context) => DetailkampanyeScreen(
+                    eventId: event['id'], // Kirim id ke layar detail
+                  ),
                 ),
               );
             },
-          ),
-          _buildRekomendasiCard(
-            image: 'assets/card_menanam.jpg',
-            title: 'Aksi Tanam Pohon di Rawan Longsor',
-            location: 'Desa Margamulyo, Kulon Progo',
-            tags: [
-              '#KebersihanLingkungan',
-              '#Komunikasi',
-              '#DistribusiBantuan'
-            ],
-            progress: '8/20',
-            badgeText: '6 hari lagi',
-          ),
-          _buildRekomendasiCard(
-            image: 'assets/card_dapurumum.png',
-            title: 'Dapur Umum untuk Korban Bencana',
-            location: 'Posko Bencana, Kabupaten Cianjur',
-            tags: [
-              '#KebersihanLingkungan',
-              '#DistribusiBantuan',
-            ],
-            progress: '8/20',
-            badgeText: '6 hari lagi',
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -500,11 +630,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
                   ),
-                  child: Image.asset(
-                    image,
+                  child: Image.network(
+                    image, // URL gambar
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        return child; // Gambar selesai dimuat
+                      }
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  (loadingProgress.expectedTotalBytes ?? 1)
+                              : null,
+                        ),
+                      ); // Tampilkan indikator loading
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Icon(Icons.error,
+                            color: Colors.red), // Tampilkan ikon error
+                      );
+                    },
                   ),
                 ),
                 if (badgeText != null)
@@ -628,6 +777,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _selectedIndex = index;
     });
+
+    if (index == 1) {
+      // Indeks untuk "Jadwal"
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const JadwalScreen(), // Pastikan JadwalScreen diimpor
+        ),
+      );
+    }
   }
 
   Widget _buildBottomNavigationBar() {
