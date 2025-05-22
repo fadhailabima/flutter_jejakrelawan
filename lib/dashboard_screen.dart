@@ -66,33 +66,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Dynamically compute the profile picture path
   String get profilePicturePath {
-    return profilePicture.isNotEmpty
-        ? profilePicture.split('/').last // Extract the last part of the path
-        : '';
+    return profilePicture.isNotEmpty ? profilePicture.split('/').last : '';
   }
 
-  // Dynamically compute the full profile picture URL
   String get fullProfilePictureUrl {
-    return profilePicturePath.isNotEmpty
-        ? '$baseUrl$profilePicturePath' // Combine base URL with the path
-        : ''; // Fallback to an empty string if no profile picture
+    return profilePicturePath.isNotEmpty ? '$baseUrl$profilePicturePath' : '';
   }
 
-  // Dynamically compute the image path
   String getImagePath(String imageUrl) {
-    return imageUrl.isNotEmpty
-        ? imageUrl.split('/').last // Extract the last part of the path
-        : '';
+    return imageUrl.isNotEmpty ? imageUrl.split('/').last : '';
   }
 
-// Dynamically compute the full image URL
   String getFullImageUrl(String imageUrl) {
     final imagePath = getImagePath(imageUrl);
-    return imagePath.isNotEmpty
-        ? '$baseUrl$imagePath' // Combine base URL with the path
-        : ''; // Fallback to an empty string if no image URL
+    return imagePath.isNotEmpty ? '$baseUrl$imagePath' : '';
   }
 
   void _showErrorDialog(String message) {
@@ -120,19 +108,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final formattedDate =
               DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
           return {
-            'id': event['id'], // Ambil ID dari API
-            'image': getFullImageUrl(event['image_url']), // Gunakan getter
-            'title': event['title'], // Judul dari API
-            'location': event['location'], // Lokasi dari API
-            'start_date': formattedDate, // Tanggal mulai
+            'id': event['id'],
+            'image': getFullImageUrl(event['image_url']),
+            'title': event['title'],
+            'location': event['location'],
+            'start_date': formattedDate,
           };
         }).toList();
-        isLoading = false; // Selesai memuat
+        isLoading = false;
       });
     } catch (e) {
       _showErrorDialog('Gagal memuat event. Silakan coba lagi nanti.');
       setState(() {
-        isLoading = false; // Selesai memuat meskipun gagal
+        isLoading = false;
       });
     }
   }
@@ -150,24 +138,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final formattedDate =
               DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
           return {
-            'id': eventSkills['id'], // Ambil ID dari API
-            'image':
-                getFullImageUrl(eventSkills['image_url']), // Gunakan getter
-            'title': eventSkills['title'], // Judul dari API
+            'id': eventSkills['id'],
+            'image': getFullImageUrl(eventSkills['image_url']),
+            'title': eventSkills['title'],
             'location': eventSkills['location'],
             'max_volunteers': eventSkills['max_volunteers'],
             'volunteerCount': eventSkills['volunteerCount'],
-            'skills': skills, // Lokasi dari API
+            'skills': skills,
             'start_date': formattedDate,
-            'raw_start_date': rawDate, // Tanggal mulai
+            'raw_start_date': rawDate,
           };
         }).toList();
-        isLoading = false; // Selesai memuat
+        isLoading = false;
       });
     } catch (e) {
       _showErrorDialog('Gagal memuat event. Silakan coba lagi nanti.');
       setState(() {
-        isLoading = false; // Selesai memuat meskipun gagal
+        isLoading = false;
       });
     }
   }
@@ -177,20 +164,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Konten utama dengan scroll
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                // header dengan icon notifikasi dan profil (tanpa logo karena logo diposisikan fixed)
                 const SizedBox(
                   height: 130,
                   child: Stack(
                     children: [],
                   ),
                 ),
-
-                // konten utama
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -222,44 +205,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-
-          // Posisi logo fixed kiri atas, seperti pada LoginScreen
           Positioned(
             top: -10,
             left: -23,
-            right:
-                0, // Tambahkan right untuk membuat elemen sejajar di baris yang sama
+            right: 0,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo di sebelah kiri
                   Image.asset(
                     'assets/logo_apps.png',
                     height: 170,
                     width: 170,
                     fit: BoxFit.contain,
                   ),
-                  const Spacer(), // Spacer untuk mendorong ikon ke kanan
-                  // Ikon notifikasi
+                  const Spacer(),
                   const Icon(Icons.notifications_none,
                       color: Colors.black, size: 28),
                   const SizedBox(width: 12),
                   const Icon(Icons.history, color: Colors.black, size: 28),
                   const SizedBox(width: 12),
-                  // Profil di sebelah kanan
                   CircleAvatar(
                     radius: 14,
                     backgroundImage: profilePicturePath.isNotEmpty
-                        ? NetworkImage(
-                            '$baseUrl$profilePicturePath') // Gabungkan base URL dengan path
+                        ? NetworkImage('$baseUrl$profilePicturePath')
                         : const AssetImage('assets/profile_picture.jpg')
                             as ImageProvider,
                     child: profilePicturePath.isNotEmpty
                         ? null
-                        : const Icon(Icons.person,
-                            size: 14), // Fallback icon jika tidak ada gambar
+                        : const Icon(Icons.person, size: 14),
                   ),
                 ],
               ),
@@ -273,7 +248,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildMainBanner() {
     if (events.isEmpty) {
-      // Tampilkan pesan jika tidak ada event
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -298,8 +272,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     }
-
-    // Jika ada event, tampilkan banner
     return Column(
       children: [
         SizedBox(
@@ -309,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             itemCount: events.length,
             onPageChanged: (index) {
               setState(() {
-                _currentBannerIndex = index; // Gunakan variabel anggota kelas
+                _currentBannerIndex = index;
               });
             },
             itemBuilder: (context, index) {
@@ -319,7 +291,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => DetailkampanyeScreen(
-                        eventId: banner['id'], // Kirim id ke layar detail
+                        eventId: banner['id'],
                       ),
                     ),
                   );
@@ -369,7 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${banner['location']!}, ${banner['start_date']!}', // Gabungkan lokasi dan tanggal
+                                  '${banner['location']!}, ${banner['start_date']!}',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -416,9 +388,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _currentBannerIndex == index
-                    ? Colors.blue
-                    : Colors.grey, // Gunakan variabel anggota kelas
+                color: _currentBannerIndex == index ? Colors.blue : Colors.grey,
               ),
             ),
           ),
@@ -434,27 +404,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: _buildInfoItem(
             context,
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.center, // Ikon sejajar dengan teks
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Image(
                   image: AssetImage('assets/asset_poin.png'),
-                  width: 40.0, // Sesuaikan ukuran ikon
+                  width: 40.0,
                   height: 40.0,
                 ),
-                const SizedBox(width: 8.0), // Jarak antara ikon dan teks
+                const SizedBox(width: 8.0),
                 Column(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center, // Pusatkan teks secara vertikal
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start, // Teks rata kiri
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Poin Relawan',
                       style: TextStyle(fontSize: 16.0),
                     ),
-                    const SizedBox(
-                        height: 4.0), // Jarak antara teks atas dan bawah
+                    const SizedBox(height: 4.0),
                     Text(
                       '$totalPoint Poin',
                       style: const TextStyle(
@@ -488,7 +454,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 4.0),
                 Text(
-                  '$volunteerCount Kampanye', // Menggunakan volunteerCount secara dinamis
+                  '$volunteerCount Kampanye',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 16.0,
@@ -524,8 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildRekomendasiHorizontalList() {
     if (isLoading) {
       return const Center(
-        child:
-            CircularProgressIndicator(), // Tampilkan loading saat data dimuat
+        child: CircularProgressIndicator(),
       );
     }
 
@@ -536,7 +501,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             SizedBox(height: 80),
             Icon(
-              Icons.search_off, // Ikon diganti menjadi search_off
+              Icons.search_off,
               size: 100,
               color: Colors.grey,
             ),
@@ -563,14 +528,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemBuilder: (context, index) {
           final event = eventSkills[index];
 
-          // Hitung selisih hari menggunakan raw_start_date
           final startDate = DateTime.parse(event['raw_start_date']);
-          final now = DateTime.now()
-              .toUtc()
-              .add(const Duration(hours: 7)); // Konversi ke WIB
+          final now = DateTime.now().toUtc().add(const Duration(hours: 7));
           final difference = startDate.difference(now).inDays;
-
-          // Tentukan teks badge
           final badgeText = '$difference hari lagi';
 
           return _buildRekomendasiCard(
@@ -579,12 +539,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             location: event['location'],
             tags: event['skills'],
             progress: '${event['volunteerCount']}/${event['max_volunteers']}',
-            badgeText: badgeText, // Gunakan teks badge yang dihitung
+            badgeText: badgeText,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => DetailkampanyeScreen(
-                    eventId: event['id'], // Kirim id ke layar detail
+                    eventId: event['id'],
                   ),
                 ),
               );
@@ -602,10 +562,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required List<String> tags,
     required String progress,
     String? badgeText,
-    VoidCallback? onTap, // Tambahan untuk badge "5 hari lagi"
+    VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: onTap, // <--- Tambahkan ini
+      onTap: onTap,
       child: Container(
         width: 290,
         margin: const EdgeInsets.only(right: 12),
@@ -631,13 +591,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     topRight: Radius.circular(16),
                   ),
                   child: Image.network(
-                    image, // URL gambar
+                    image,
                     height: 150,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) {
-                        return child; // Gambar selesai dimuat
+                        return child;
                       }
                       return Center(
                         child: CircularProgressIndicator(
@@ -646,12 +606,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   (loadingProgress.expectedTotalBytes ?? 1)
                               : null,
                         ),
-                      ); // Tampilkan indikator loading
+                      );
                     },
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(
-                        child: Icon(Icons.error,
-                            color: Colors.red), // Tampilkan ikon error
+                        child: Icon(Icons.error, color: Colors.red),
                       );
                     },
                   ),
@@ -718,8 +677,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   MaterialTapTargetSize.shrinkWrap,
                               visualDensity: VisualDensity.compact,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    16), // Meningkatkan borderRadius
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ))
                         .toList(),
@@ -779,11 +737,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     if (index == 1) {
-      // Indeks untuk "Jadwal"
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const JadwalScreen(), // Pastikan JadwalScreen diimpor
+          builder: (context) => const JadwalScreen(),
         ),
       );
     }
@@ -798,7 +755,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       unselectedItemColor: Colors.grey,
       showUnselectedLabels: true,
       selectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.bold, // Membuat label terpilih bold
+        fontWeight: FontWeight.bold,
       ),
       items: [
         _buildNavItem(Icons.home, 'Beranda', 0),

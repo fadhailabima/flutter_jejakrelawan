@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_flutter_app/services/event_services.dart';
 
 class KonfirmasiScreen extends StatefulWidget {
-  final int eventId; // Tambahkan parameter eventId
+  final int eventId; 
 
   const KonfirmasiScreen({super.key, required this.eventId});
 
@@ -12,13 +12,13 @@ class KonfirmasiScreen extends StatefulWidget {
 
 class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
   final EventServices _eventServices =
-      EventServices(); // Ganti dengan base URL Anda
+      EventServices(); 
   bool _bersediaHadir = false;
   bool _sehatFisikMental = false;
   bool _siapBriefing = false;
   bool _patuhiAturanPanduan = false;
   bool _pendaftaranBerhasil =
-      false; // State baru untuk mengontrol tampilan sukses
+      false;
 
   bool _isFormValid() {
     return _bersediaHadir &&
@@ -33,25 +33,25 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
   @override
   void initState() {
     super.initState();
-    _eventDetails = fetchEventDetails(); // Panggil fungsi untuk mengambil data
+    _eventDetails = fetchEventDetails();
   }
 
   Future<Map<String, dynamic>> fetchEventDetails() async {
-    final eventServices = EventServices(); // Instansiasi EventServices
+    final eventServices = EventServices(); 
     return await eventServices.fetchEventById(widget.eventId);
   }
 
   String getImagePath(String imageUrl) {
     return imageUrl.isNotEmpty
-        ? imageUrl.split('/').last // Ekstrak bagian terakhir dari URL
+        ? imageUrl.split('/').last 
         : '';
   }
 
   String getFullImageUrl(String imageUrl) {
     final imagePath = getImagePath(imageUrl);
     return imagePath.isNotEmpty
-        ? '$baseUrl$imagePath' // Gabungkan base URL dengan path
-        : ''; // Fallback jika URL kosong
+        ? '$baseUrl$imagePath'
+        : ''; 
   }
 
   @override
@@ -67,7 +67,7 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
         title: Text(
           _pendaftaranBerhasil
               ? 'Konfirmasi pendaftaran'
-              : 'Konfirmasi pendaftaran', // Judul app bar bisa sama atau berbeda
+              : 'Konfirmasi pendaftaran', 
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -75,13 +75,12 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
       ),
       body: _pendaftaranBerhasil
           ? _buildPendaftaranBerhasilView(
-              context) // Tampilkan view sukses jika pendaftaran berhasil
+              context) 
           : _buildKonfirmasiForm(
-              context), // Tampilkan form konfirmasi jika belum berhasil
+              context),
     );
   }
 
-  // Widget untuk membangun form konfirmasi
   Widget _buildKonfirmasiForm(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
@@ -229,7 +228,6 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
     );
   }
 
-  // Widget untuk membangun tampilan "Pendaftaran Berhasil"
   Widget _buildPendaftaranBerhasilView(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -237,7 +235,7 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Spacer(), // Dorong konten ke tengah vertikal
+          const Spacer(), 
 
           const Text(
             'Pendaftaran berhasil',
@@ -261,7 +259,6 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // Kembali ke layar sebelumnya (misalnya Home Screen)
                 Navigator.popUntil(context, (route) => route.isFirst);
               },
               style: ElevatedButton.styleFrom(
@@ -278,7 +275,7 @@ class _KonfirmasiScreenState extends State<KonfirmasiScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 40.0), // Padding bawah untuk tombol
+          const SizedBox(height: 40.0), 
         ],
       ),
     );

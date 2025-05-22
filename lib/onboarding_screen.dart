@@ -117,7 +117,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => LoginScreen(), // Jangan gunakan 'const' di sini
+                              builder: (context) => const LoginScreen(),
                             ),
                           );
                         }

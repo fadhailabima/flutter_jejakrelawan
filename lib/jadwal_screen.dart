@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_flutter_app/dashboard_screen.dart';
+import 'package:my_flutter_app/laporan_screen.dart';
 import 'package:my_flutter_app/services/auth_services.dart';
 import 'package:my_flutter_app/services/event_services.dart';
 import 'package:intl/intl.dart';
@@ -17,11 +18,11 @@ class _JadwalScreenState extends State<JadwalScreen> {
   String profilePicture = '';
   String baseUrl = 'http://localhost:8080/api/file/';
 
-  List<dynamic> upcomingEvents = []; // Renamed for clarity
+  List<dynamic> upcomingEvents = [];
   List<dynamic> completedEvents = [];
   bool isLoading = true;
 
-  int _selectedTab = 0; // 0 for "Mendatang", 1 for "Selesai"
+  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -70,73 +71,59 @@ class _JadwalScreenState extends State<JadwalScreen> {
 
   Future<void> _loadEvents() async {
     setState(() {
-      isLoading = true; // Set loading to true when fetching
+      isLoading = true;
     });
+
     try {
       final fetchedEvents = await eventServices.fetchEventsVolunteer();
+      final processedEvents = fetchedEvents
+          .where((event) =>
+              event['volunteers'] != null && event['volunteers'].isNotEmpty)
+          .map((event) => _processEvent(event))
+          .toList();
       setState(() {
-        // Filter for "Mendatang" (Upcoming) events
-        upcomingEvents = fetchedEvents
-            .where((event) =>
-                event['volunteers'] != null &&
-                event['volunteers'].isNotEmpty &&
-                event['volunteers'][0]['status'] == 'Mendatang')
-            .map((event) {
-          final rawDate = event['start_date'];
-          final rawEndDate = event['end_date'];
-          final formattedEndDate =
-              DateFormat('dd MMMM yyyy').format(DateTime.parse(rawEndDate));
-          final formattedDate =
-              DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
-
-          return {
-            'id': event['id'],
-            'title': event['title'],
-            'location': event['location'],
-            'start_date': formattedDate,
-            'end_date': formattedEndDate,
-            'status': event['status'],
-            'volunteer_status': event['volunteers'][0]['status'],
-          };
-        }).toList();
-
-        // Filter for "Selesai" (Completed) events
-        completedEvents = fetchedEvents
-            .where((event) =>
-                event['volunteers'] != null &&
-                event['volunteers'].isNotEmpty &&
-                event['volunteers'][0]['status'] == 'Selesai')
-            .map((event) {
-          final rawDate = event['start_date'];
-          final rawEndDate = event['end_date'];
-          final formattedEndDate =
-              DateFormat('dd MMMM yyyy').format(DateTime.parse(rawEndDate));
-          final formattedDate =
-              DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
-
-          return {
-            'id': event['id'],
-            'title': event['title'],
-            'location': event['location'],
-            'start_date': formattedDate,
-            'end_date': formattedEndDate,
-            'status': event['status'],
-            'volunteer_status': event['volunteers'][0]['status'],
-          };
-        }).toList();
-        isLoading = false; // Set loading to false after data is fetched
+        upcomingEvents = _filterEventsByStatus(processedEvents, 'Mendatang');
+        completedEvents = _filterEventsByStatus(processedEvents, 'Selesai');
+        isLoading = false;
       });
     } catch (e) {
       _showErrorDialog('Gagal memuat event. Silakan coba lagi nanti.');
       setState(() {
-        isLoading = false; // Set loading to false on error
+        isLoading = false;
       });
     }
   }
 
+  Map<String, dynamic> _processEvent(Map<String, dynamic> event) {
+    final rawDate = event['start_date'];
+    final rawEndDate = event['end_date'];
+    final formattedDate =
+        DateFormat('dd MMMM yyyy').format(DateTime.parse(rawDate));
+    final formattedEndDate =
+        DateFormat('dd MMMM yyyy').format(DateTime.parse(rawEndDate));
+
+    return {
+      'id': event['id'],
+      'title': event['title'],
+      'location': event['location'],
+      'start_date': formattedDate,
+      'end_date': formattedEndDate,
+      'status': event['status'],
+      'volunteer_status': event['volunteers'][0]['status'],
+      'has_reports': event['volunteers'][0]['Reports'] != null &&
+          event['volunteers'][0]['Reports'].isNotEmpty,
+    };
+  }
+
+  List<Map<String, dynamic>> _filterEventsByStatus(
+      List<Map<String, dynamic>> events, String status) {
+    return events
+        .where((event) => event['volunteer_status'] == status)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Determine which list of events to display based on the selected tab
     List<dynamic> currentEvents =
         _selectedTab == 0 ? upcomingEvents : completedEvents;
 
@@ -155,7 +142,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Tab buttons "Mendatang" and "Selesai"
                       Row(
                         children: [
                           Expanded(
@@ -163,7 +149,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
                               onTap: () {
                                 setState(() {
                                   _selectedTab = 0;
-                                  // No need to call _loadEvents() again, data is already filtered
                                 });
                               },
                               child: Container(
@@ -197,7 +182,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
                               onTap: () {
                                 setState(() {
                                   _selectedTab = 1;
-                                  // No need to call _loadEvents() again, data is already filtered
                                 });
                               },
                               child: Container(
@@ -228,8 +212,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Conditional display based on loading state and event lists
                       isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : currentEvents.isEmpty
@@ -263,8 +245,6 @@ class _JadwalScreenState extends State<JadwalScreen> {
               ],
             ),
           ),
-
-          // Posisi header fixed kiri atas (remains unchanged)
           Positioned(
             top: -10,
             left: -23,
@@ -306,172 +286,147 @@ class _JadwalScreenState extends State<JadwalScreen> {
     );
   }
 
-  // Helper method to build an event card
   Widget _buildEventCard(Map<String, dynamic> event) {
-    DateTime startDate = DateFormat('dd MMMM yyyy')
-        .parse(event['start_date']); // Parsing dari String ke DateTime
-    DateTime endDate = DateFormat('dd MMMM yyyy')
-        .parse(event['end_date']); // Parsing dari String ke DateTime
-    DateTime now = DateTime.now();
-
-    // Determine the status based on the current date
-    String status;
-    if (now.isBefore(startDate)) {
-      status = 'Belum berjalan';
-    } else if (now.isAfter(endDate)) {
-      status = 'Selesai';
-    } else {
-      status = 'Sedang berjalan';
-    }
-
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(
-          color: Colors.grey, // Warna border
-          width: 1.0, // Ketebalan border
+          color: Colors.grey,
+          width: 1.0,
         ),
       ),
       color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 16), // Added margin for spacing
+      margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              event['title'],
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color.fromRGBO(16, 24, 40, 1),
-              ),
-            ),
+            _buildEventTitle(event),
             const SizedBox(height: 4),
-            Text(
-              event['location'],
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: Color.fromRGBO(106, 114, 130, 1),
-              ),
-            ),
+            _buildEventLocation(event),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  '${event['start_date']} - ${event['end_date']}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Color.fromRGBO(106, 114, 130, 1),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[700],
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  // Display the event's general status or volunteer status if preferred
-                  status,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Color.fromRGBO(106, 114, 130, 1),
-                  ),
-                ),
-              ],
-            ),
+            _buildEventDate(event),
             const SizedBox(height: 16),
-            // "Tandai selesai" button only for "Mendatang" events
-            if (event['volunteer_status'] == 'Mendatang')
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      // Panggil fungsi untuk menandai selesai dengan event['id']
-                      await eventServices.changeStatus(event['id']);
-
-                      // Pastikan widget masih mounted sebelum melakukan operasi terkait UI
-                      if (!mounted) return;
-
-                      // Jika berhasil, set state untuk memperbarui status
-                      setState(() {
-                        status = 'Selesai';
-                      });
-
-                      // Tampilkan pesan sukses
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Berhasil menandai selesai'),
-                        ),
-                      );
-                    } catch (e) {
-                      // Tangani error jika terjadi
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Gagal menandai selesai: $e'),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(7, 122, 255, 1),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Tandai selesai',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              )
-            else if (event['volunteer_status'] == 'Selesai')
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Navigasi ke halaman isi laporan
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => IsiLaporanScreen(eventId: event['id']),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(0, 200, 83, 1), // Warna hijau
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Isi Laporan',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              )
+            _buildActionButton(event),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventTitle(Map<String, dynamic> event) {
+    return Text(
+      event['title'],
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: Color.fromRGBO(16, 24, 40, 1),
+      ),
+    );
+  }
+
+  Widget _buildEventLocation(Map<String, dynamic> event) {
+    return Text(
+      event['location'],
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: Color.fromRGBO(106, 114, 130, 1),
+      ),
+    );
+  }
+
+  Widget _buildEventDate(Map<String, dynamic> event) {
+    return Text(
+      '${event['start_date']} - ${event['end_date']}',
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: Color.fromRGBO(106, 114, 130, 1),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(Map<String, dynamic> event) {
+    if (event['volunteer_status'] == 'Mendatang') {
+      return _buildMarkAsCompletedButton(event);
+    } else if (event['volunteer_status'] == 'Selesai' &&
+        !event['has_reports']) {
+      return _buildFillReportButton(event);
+    }
+    return const SizedBox
+        .shrink();
+  }
+
+  Widget _buildMarkAsCompletedButton(Map<String, dynamic> event) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () async {
+          try {
+            await eventServices.changeStatus(event['id']);
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Berhasil menandai selesai'),
+              ),
+            );
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Gagal menandai selesai: $e'),
+              ),
+            );
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromRGBO(7, 122, 255, 1),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30.0),
+          ),
+        ),
+        child: const Text(
+          'Tandai selesai',
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFillReportButton(Map<String, dynamic> event) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => IsiLaporanScreen(eventId: event['id']),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromRGBO(7, 122, 255, 1),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30.0),
+          ),
+        ),
+        child: const Text(
+          'Isi Laporan',
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

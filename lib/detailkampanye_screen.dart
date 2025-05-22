@@ -4,7 +4,7 @@ import 'package:my_flutter_app/services/event_services.dart';
 import 'package:intl/intl.dart';
 
 class DetailkampanyeScreen extends StatefulWidget {
-  final int eventId; // GANTI ke int
+  final int eventId;
 
   const DetailkampanyeScreen({super.key, required this.eventId});
 
@@ -19,25 +19,21 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
   @override
   void initState() {
     super.initState();
-    _eventDetails = fetchEventDetails(); // Panggil fungsi untuk mengambil data
+    _eventDetails = fetchEventDetails();
   }
 
   Future<Map<String, dynamic>> fetchEventDetails() async {
-    final eventServices = EventServices(); // Instansiasi EventServices
+    final eventServices = EventServices();
     return await eventServices.fetchEventById(widget.eventId);
   }
 
   String getImagePath(String imageUrl) {
-    return imageUrl.isNotEmpty
-        ? imageUrl.split('/').last // Ekstrak bagian terakhir dari URL
-        : '';
+    return imageUrl.isNotEmpty ? imageUrl.split('/').last : '';
   }
 
   String getFullImageUrl(String imageUrl) {
     final imagePath = getImagePath(imageUrl);
-    return imagePath.isNotEmpty
-        ? '$baseUrl$imagePath' // Gabungkan base URL dengan path
-        : ''; // Fallback jika URL kosong
+    return imagePath.isNotEmpty ? '$baseUrl$imagePath' : '';
   }
 
   @override
@@ -92,7 +88,6 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ganti data statis dengan data dari API
                   Image.network(
                     fullImageUrl,
                     width: double.infinity,
@@ -171,8 +166,6 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
                           ),
                         ),
                         const SizedBox(height: 24.0),
-
-                        // Perolehan poin
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -192,7 +185,7 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
                                 ),
                                 const SizedBox(width: 4.0),
                                 Text(
-                                  '${event['point_reward']}', // Ensure this is converted to a String
+                                  '${event['point_reward']}',
                                   style: const TextStyle(
                                     fontSize: 16.0,
                                     fontWeight: FontWeight.bold,
@@ -203,8 +196,6 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
                           ],
                         ),
                         const SizedBox(height: 10.0),
-
-                        // Deskripsi Tugas
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -221,8 +212,6 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
                             const SizedBox(height: 10.0),
                           ],
                         ),
-
-                        // Syarat Keahlian
                         const Text(
                           'Syarat keahlian',
                           style: TextStyle(
@@ -234,7 +223,6 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
                           style: const TextStyle(fontSize: 16.0, height: 1.5),
                         ),
                         const SizedBox(height: 30.0),
-                        // Tambahkan elemen lain sesuai kebutuhan
                       ],
                     ),
                   ),
@@ -278,11 +266,9 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
   }
 
   List<Widget> _buildDescription(String description) {
-    // Pisahkan deskripsi berdasarkan '\n•'
     final parts = description.split('\n•');
     final widgets = <Widget>[];
 
-    // Tambahkan teks biasa (bagian pertama)
     if (parts.isNotEmpty) {
       widgets.add(
         Text(
@@ -292,7 +278,6 @@ class DetailkampanyeScreenState extends State<DetailkampanyeScreen> {
       );
     }
 
-    // Tambahkan poin-poin (jika ada)
     for (var i = 1; i < parts.length; i++) {
       widgets.add(_buildBulletPoint(parts[i].trim()));
     }
