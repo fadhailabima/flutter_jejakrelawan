@@ -22,13 +22,20 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
           'assets/onboarding_gif.gif',
-          width: 250,
+          width: screenWidth * 0.6,
           fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.broken_image,
+            size: 50,
+            color: Colors.grey,
+          ),
         ),
       ),
     );

@@ -15,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService authService = AuthService();
 
   void _showDialog(String message) {
-    if (!mounted) return; // Ensure the widget is still mounted
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -70,40 +70,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return Scaffold(
       body: Stack(
         children: [
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.only(
-                left: 24.0,
-                right: 24.0,
-                bottom: 10.0,
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width * 0.06,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
+                  SizedBox(height: size.height * 0.05),
                   Center(
                     child: Image.asset(
                       'assets/login.png',
-                      height: 380,
-                      width: 380,
+                      height: size.height * 0.4,
+                      width: size.width * 0.8,
                     ),
                   ),
                   Transform.translate(
-                    offset: const Offset(0, -30),
-                    child: const Text(
+                    offset: Offset(0, -size.height * 0.03),
+                    child: Text(
                       'Masuk Akun',
                       style: TextStyle(
-                        fontSize: 30,
+                        fontSize: size.width * 0.08,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
                   Transform.translate(
-                    offset: const Offset(0, -10),
+                    offset: Offset(0, -size.height * 0.01),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -121,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: size.height * 0.015),
                         TextField(
                           controller: passwordController,
                           decoration: InputDecoration(
@@ -136,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           obscureText: true,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: size.height * 0.01),
                         Align(
                           alignment: Alignment.centerRight,
                           child: GestureDetector(
@@ -175,10 +174,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: size.height * 0.02),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: size.height * 0.07,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -201,12 +200,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           Positioned(
-            top: 0,
+            top: size.height * 0.02,
             left: 0,
             child: Image.asset(
               'assets/logo_apps.png',
-              height: 170,
-              width: 170,
+              height: size.height * 0.15,
+              width: size.height * 0.15,
             ),
           ),
         ],
